@@ -5,10 +5,43 @@ already wired up. No prompts, no flags, no libraries you didn't ask for.
 
 ## Usage
 
+### Create a project
+
 ```
 pnpx create-thanmatt-app my-app
 cd my-app
 pnpm dev
+```
+
+### Generate a feature
+
+Run inside an existing project — from the root or any subdirectory:
+
+```
+pnpm dlx create-thanmatt-app feature Billing
+```
+
+Which writes:
+
+```
+src/features/Billing/
+  components/README.md
+  hooks/README.md
+  utils/README.md
+  api.ts
+  types.ts
+```
+
+The name is used verbatim as the folder name, so `feature Billing` gives you
+`Billing/`, not `billing/`. Each README describes what belongs in that folder and
+doubles as the file that keeps the otherwise-empty directory tracked by git.
+
+If you generate features often, install the CLI as a dev dependency so it runs from
+`node_modules` instead of being downloaded each time:
+
+```
+pnpm add -D create-thanmatt-app
+pnpm exec create-thanmatt-app feature Billing
 ```
 
 ## What you get
@@ -20,6 +53,7 @@ pnpm dev
   `pnpm dlx shadcn@latest add <component>`.
 - `@/*` path alias, wired for both TypeScript and Vite
 - `components/`, `config/` and `features/` folders, each with a README describing what belongs in it
+- A `feature` generator for scaffolding new feature folders (see below)
 
 Deliberately **not** included: routing and state management. Add whatever the project
 actually needs — TanStack Router, React Router, Zustand — rather than carrying a default

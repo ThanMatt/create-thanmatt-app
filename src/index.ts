@@ -125,12 +125,18 @@ hooks, utils, types and data access, and exports only what the rest of the app n
 
 \`\`\`
 features/
-  billing/
+  Billing/
     components/
     hooks/
     utils/
     api.ts
     types.ts
+\`\`\`
+
+Scaffold one with:
+
+\`\`\`
+pnpm dlx create-thanmatt-app feature Billing
 \`\`\`
 
 Nothing here is prescriptive — add only the folders a feature actually uses. Once
@@ -419,6 +425,120 @@ async function scaffold(projectName: string) {
   console.log(`  ${pc.bold("pnpm dev")}\n`);
 }
 
+// :: Per-folder READMEs for a generated feature. They double as the file that keeps
+// :: an otherwise-empty directory tracked by git.
+function componentsReadme(feature: string) {
+  return `# ${feature} components
+
+Components used only by the ${feature} feature. Anything a second feature needs
+moves up to \`src/components/\`.
+`;
+}
+
+function hooksReadme(feature: string) {
+  return `# ${feature} hooks
+
+React hooks scoped to the ${feature} feature — data loading, form state, and any
+other stateful logic its components share.
+`;
+}
+
+function utilsReadme(feature: string) {
+  return `# ${feature} utils
+
+Pure helpers for the ${feature} feature — formatting, mapping, validation. No React
+and no side effects; if it needs either, it belongs in \`hooks/\` or \`api.ts\`.
+`;
+}
+
+function featureApi(feature: string) {
+  return `// :: Data access for the ${feature} feature. Keep fetch calls and request/response
+// :: mapping here so components never deal with transport details.
+`;
+}
+
+function featureTypes(feature: string) {
+  return `// :: Types for the ${feature} feature — the shapes its components, hooks and api
+// :: share. Anything used app-wide belongs somewhere more central.
+`;
+}
+
+// :: Walk up from the current directory to the nearest package.json, so the generator
+// :: works from anywhere inside a project rather than only from its root.
+function findProjectRoot(startDir: string) {
+  let dir = startDir;
+
+  for (;;) {
+    if (existsSync(path.join(dir, "package.json"))) {
+      return dir;
+    }
+
+    const parent = path.dirname(dir);
+
+    if (parent === dir) {
+      return null;
+    }
+
+    dir = parent;
+  }
+}
+
+// :: The feature name is used verbatim as the folder name, so reject anything that
+// :: would escape src/features/ or land somewhere unexpected.
+function assertUsableName(featureName: string) {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(featureName)) {
+    throw new Error(
+      `"${featureName}" is not a usable folder name — use letters, digits, dots, dashes or underscores`,
+    );
+  }
+}
+
+async function scaffoldFeature(featureName: string) {
+  assertUsableName(featureName);
+
+  const root = findProjectRoot(process.cwd());
+
+  if (!root) {
+    throw new Error(
+      "No package.json found here or in any parent directory — run this inside a project",
+    );
+  }
+
+  const relative = path.join("src", "features", featureName);
+
+  if (existsSync(path.join(root, relative))) {
+    throw new Error(`${relative} already exists`);
+  }
+
+  step(`Creating feature ${featureName}`);
+
+  const files: Array<[string, string]> = [
+    [path.join(relative, "components", "README.md"), componentsReadme(featureName)],
+    [path.join(relative, "hooks", "README.md"), hooksReadme(featureName)],
+    [path.join(relative, "utils", "README.md"), utilsReadme(featureName)],
+    [path.join(relative, "api.ts"), featureApi(featureName)],
+    [path.join(relative, "types.ts"), featureTypes(featureName)],
+  ];
+
+  for (const [relativePath, contents] of files) {
+    await write(root, relativePath, contents);
+    console.log(pc.dim(`   ${relativePath}`));
+  }
+
+  console.log(pc.green(`\nDone. ${relative} is ready.\n`));
+}
+
+// :: Turn anything thrown by a command into one red line and a non-zero exit
+async function guard(action: () => Promise<void>) {
+  try {
+    await action();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(pc.red(`\ncreate-thanmatt-app failed: ${message}`));
+    process.exit(1);
+  }
+}
+
 const program = new Command();
 
 program
@@ -426,15 +546,24 @@ program
   .description(
     "Scaffold a bare-bones Vite + React + TypeScript app with Tailwind v4 and shadcn/ui",
   )
-  .argument("<project-name>", "directory to create the app in")
-  .action(async (projectName: string) => {
-    try {
-      await scaffold(projectName);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(pc.red(`\ncreate-thanmatt-app failed: ${message}`));
+  .argument("[project-name]", "directory to create the app in")
+  .action(async (projectName: string | undefined) => {
+    // :: Optional only so that `feature` can be given instead. One of the two is required.
+    if (!projectName) {
+      console.error(pc.red("\nMissing <project-name>.\n"));
+      program.outputHelp();
       process.exit(1);
     }
+
+    await guard(() => scaffold(projectName));
+  });
+
+program
+  .command("feature")
+  .description("scaffold a feature folder inside the current project")
+  .argument("<name>", "feature name, used verbatim as the folder name")
+  .action(async (name: string) => {
+    await guard(() => scaffoldFeature(name));
   });
 
 program.parse();
