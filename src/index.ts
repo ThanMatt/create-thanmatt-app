@@ -363,9 +363,15 @@ async function scaffold(projectName: string) {
   }
 
   // :: 1. Base app. No `--` before `--template`: pnpm swallows it and create-vite
-  // :: silently falls back to the vanilla-ts template.
+  // :: silently falls back to the vanilla-ts template. --no-interactive is required
+  // :: too: create-vite 9 still prompts for a linter even with a name and template
+  // :: given, and only skips that prompt on its own when stdin is not a TTY.
   step(`Creating Vite React + TypeScript app in ${projectName}/`);
-  await run("pnpm", ["create", "vite@latest", projectName, "--template", "react-ts"], cwd);
+  await run(
+    "pnpm",
+    ["create", "vite@latest", projectName, "--template", "react-ts", "--no-interactive"],
+    cwd,
+  );
 
   // :: 2. Dependencies, in one batched install
   step("Installing dependencies");
