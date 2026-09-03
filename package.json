@@ -1,0 +1,40 @@
+{
+  "name": "create-thanmatt-app",
+  "version": "0.1.0",
+  "description": "Scaffold a bare-bones Vite + React + TypeScript app with Tailwind v4 and shadcn/ui.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "create-thanmatt-app": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "keywords": [
+    "vite",
+    "react",
+    "typescript",
+    "tailwindcss",
+    "shadcn",
+    "boilerplate",
+    "cli"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --target node18 --clean --shims",
+    "dev": "tsup src/index.ts --format esm --target node18 --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "commander": "^15.0.0",
+    "execa": "^10.0.1",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2"
+  }
+}
